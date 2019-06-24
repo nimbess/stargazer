@@ -1,0 +1,17 @@
+FROM golang:alpine as builder
+
+ENV CGO_ENABLED=0
+
+RUN apk add --update git make
+
+COPY . /go/src/github.com/nimbess/stargazer
+
+WORKDIR /go/src/github.com/nimbess/stargazer
+
+RUN make build
+
+FROM scratch
+
+COPY --from=builder /go/src/github.com/nimbess/stargazer/bin/stargazer /stargazer
+
+ENTRYPOINT ["/stargazer"]

@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: nimbess-etcd
+  namespace: kube-system
+  labels:
+    k8s-app: nimbess-etcd
+spec:
+  serviceName: nimbess-etcd
+  selector:
+    matchLabels:
+      k8s-app: nimbess-etcd
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: nimbess-etcd
+      annotations:
+        # Marks this pod as a critical add-on.
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      tolerations:
+        # We need this to schedule on the master no matter what else is going on, so tolerate everything.
+        - key: ''
+          operator: Exists
+          effect: ''
+        # This likely isn't needed due to the above wildcard, but keep it in for now.
+        - key: CriticalAddonsOnly
+          operator: Exists
+      # Only run this pod on the master.
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      hostNetwork: true
+      containers:
+        - name: nimbess-etcd
+          # can't use gcr image because of auth errors
+          #image: k8s.gcr.io/etcd:v3.3.10
+          image: quay.io/coreos/etcd:v3.3.10
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ETCDCTL_API
+              value: "3"
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - /usr/local/bin/etcd --name=nimbess-etcd --data-dir=/var/etcd/nimbess-data
+              --advertise-client-urls=http://0.0.0.0:12379 --listen-client-urls=http://0.0.0.0:12379 --listen-peer-urls=http://0.0.0.0:12380
+          # command for using gcr image
+          #command:
+          #  - /usr/local/bin/etcd
+          #args:
+          #  - --name=nimbess-etcd --data-dir=/var/lib/nimbess-etcd
+          #  - --advertise-client-urls=https://192.168.1.73:12379
+          #  - --listen-client-urls=https://127.0.0.1:12379,https://192.168.122.73:12379
+          #  - --listen-peer-urls=https://192.168.122.73:12380
+          # args when adding security
+          #args:
+            #- -c
+            #- /usr/local/bin/etcd --name=contiv-etcd --data-dir=/var/etcd/contiv-data
+            #  --client-cert-auth --trusted-ca-file=/var/contiv/etcd-secrets/ca.pem
+            #  --cert-file=/var/contiv/etcd-secrets/server.pem --key-file=/var/contiv/etcd-secrets/server-key.pem
+            #  --peer-client-cert-auth --peer-trusted-ca-file=/var/contiv/etcd-secrets/ca.pem
+            #  --peer-cert-file=/var/contiv/etcd-secrets/server.pem --peer-key-file=/var/contiv/etcd-secrets/server-key.pem
+            #  --advertise-client-urls=https://0.0.0.0:12379 --listen-client-urls=https://0.0.0.0:12379 --listen-peer-urls=https://0.0.0.0:12380
+            #  --cipher-suites TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          volumeMounts:
+            - mountPath: /var/lib/nimbess-etcd
+              name: etcd-data
+            - mountPath: /etc/kubernetes/pki/etcd
+              name: etcd-certs
+          resources: {}
+      volumes:
+        - hostPath:
+            path: /etc/kubernetes/pki/etcd
+            type: DirectoryOrCreate
+          name: etcd-certs
+        - hostPath:
+            path: /var/lib/nimbess-etcd
+            type: DirectoryOrCreateq
+          name: etcd-data
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nimbess-etcd
+  namespace: kube-system
+spec:
+  type: NodePort
+  # Match nimbess-etcd DaemonSet.
+  selector:
+    k8s-app: nimbess-etcd
+  ports:
+    - port: 12379
+      nodePort: 32379

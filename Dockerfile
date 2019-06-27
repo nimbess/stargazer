@@ -1,9 +1,6 @@
-#FROM golang:alpine
-FROM scratch
+FROM golang:alpine
 
 ADD bin/stargazer /usr/bin/stargazer
 ADD stargazer.yaml /etc/stargazer.yaml
 
-ENTRYPOINT ["/bin/stargazer -v"]
-#ENTRYPOINT ["/bin/sh"]
-#CMD ["stargazer", "-config-path", "/etc"]
+CMD ["stargazer", "-config-path", "/etc"]

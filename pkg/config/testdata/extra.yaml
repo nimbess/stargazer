@@ -2,3 +2,4 @@
 LogLevel: Debug
 NodeWorkers: 1
 Controllers: node
+Extra: extra

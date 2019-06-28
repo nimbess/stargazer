@@ -2,4 +2,5 @@
 LogLevel: Debug
 Controllers: node
 NodeWorkers: 1
+UNPWorkers: 1
 Extra: extra

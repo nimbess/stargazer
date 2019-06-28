@@ -1,4 +1,4 @@
 ---
 LogLevel: Debug
-NodeWorkers: invalid
 Controllers: node
+NodeWorkers: invalid

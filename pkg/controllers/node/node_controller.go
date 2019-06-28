@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package node is the Node controller implementation.
 package node
 
 import (
@@ -24,24 +25,30 @@ import (
 	"sync"
 )
 
-type NodeController struct {
-	ctx          context.Context
-	informer     cache.Controller
-	indexer      cache.Indexer
-	config       *config.Config
-	nodemapper   map[string]string
-	nodemapLock  sync.Mutex
+// Controller implements the Controller interface. It is responsible for monitoring
+// kubernetes nodes and responding to delete events by removing them from the Nimbess datastore.
+type Controller struct {
+	ctx         context.Context
+	informer    cache.Controller
+	indexer     cache.Indexer
+	config      *config.Config
+	nodemapper  map[string]string
+	nodemapLock sync.Mutex
 }
 
-func NewNodeController(ctx context.Context, cfg *config.Config) controller.Controller {
-	return &NodeController{
-		ctx:          ctx,
-		nodemapper:   map[string]string{},
-		config:       cfg,
+// NewController is the constructor for a Node Controller.
+// config is assumed to have been validated earlier.
+func NewController(ctx context.Context, cfg *config.Config) controller.Controller {
+	return &Controller{
+		ctx:        ctx,
+		nodemapper: map[string]string{},
+		config:     cfg,
 	}
 }
 
-func (c *NodeController) Run(threadiness int, stopCh chan struct{}) {
+// Run starts the node controller. It performs basic verifications and then launches
+// worker threads.
+func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
 	defer runtime.HandleCrash()
 
 	log.Info("Starting Node controller")

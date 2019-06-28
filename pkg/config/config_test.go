@@ -31,18 +31,18 @@ type testinput struct {
 
 type testoutput struct {
 	error string
-	cfg config.Config
+	cfg   config.Config
 }
 
 type testio struct {
-	in testinput
+	in       testinput
 	expected testoutput
 }
 
-var tests = []testio {
+var tests = []testio{
 	// pass: successful read and parse of config
 	{testinput{"./testdata", "stargazer"},
-		testoutput{"success",  config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
+		testoutput{"success", config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
 	// pass: bad path, expected fail
 	{testinput{"./badpath", "stargazer"},
 		testoutput{"bad path", config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
@@ -51,10 +51,10 @@ var tests = []testio {
 		testoutput{"bad name", config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
 	// pass: successful read and parse of config with extra params that are ignored
 	{testinput{"./testdata", "extra"},
-		testoutput{"success",  config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
+		testoutput{"success", config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
 	// pass: fail to read and parse of config with invalid params
 	{testinput{"./testdata", "invalid"},
-		testoutput{"invalid",  config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
+		testoutput{"invalid", config.Config{LogLevel: "Debug", NodeWorkers: 1, Controllers: "node"}}},
 }
 
 func init() {

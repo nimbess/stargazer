@@ -49,14 +49,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	//cfg := new(config.Config)
+	// Parse the user supplied config. If there are parsing errors then defaults will be used.
 	cfg := config.NewConfig()
 	if err := cfg.Parse(cfgPath, cfgName); err != nil {
 		log.WithField("cfgName", cfgName).WithField("cfgPath", cfgPath).
 			WithError(err).Warn("Failed to parse config, using defaults")
 	}
 
-	log.WithField("config", fmt.Sprintf("%+v",*cfg)).Info("Configuration loaded")
+	log.WithField("config", fmt.Sprintf("%+v", *cfg)).Info("Configuration loaded")
 
 	logLevel, err := log.ParseLevel(cfg.LogLevel)
 	if err != nil {
@@ -70,20 +70,21 @@ func main() {
 	// TODO: ensure connection to etcd is available
 
 	controllerCtrl := &controllerControl{
-		ctx:              ctx,
-		controllerStates: make(map[string]*controllerState),
-		config:           cfg,
-		stop:             stop,
+		ctx:            ctx,
+		controllerInfo: make(map[string]*controllerInfo),
+		config:         cfg,
+		stop:           stop,
 	}
 
-	// Create and start each requested controller
+	// Create an instance of each requested controller.
+	// Store the instance along with it's number of workers into a manager list
 	for _, controllerType := range strings.Split(cfg.Controllers, ",") {
 		switch controllerType {
 		case "node":
-			nodeController := node.NewNodeController(ctx, cfg)
-			controllerCtrl.controllerStates["Node"] = &controllerState {
+			nodeController := node.NewController(ctx, cfg)
+			controllerCtrl.controllerInfo["Node"] = &controllerInfo{
 				controller: nodeController,
-				threadiness: cfg.NodeWorkers,
+				workers:    cfg.NodeWorkers,
 			}
 		default:
 			log.WithField("controller", controllerType).Info("Invalid controller")
@@ -95,23 +96,23 @@ func main() {
 
 // Object for keeping track of controller states and statuses.
 type controllerControl struct {
-	ctx              context.Context
-	controllerStates map[string]*controllerState
-	config           *config.Config
-	stop             chan struct{}
+	ctx            context.Context
+	controllerInfo map[string]*controllerInfo
+	config         *config.Config
+	stop           chan struct{}
 }
 
 // Runs all the controllers and blocks indefinitely.
 func (cc *controllerControl) RunControllers() {
-	for controllerType, cs := range cc.controllerStates {
+	for controllerType, cs := range cc.controllerInfo {
 		log.WithField("ControllerType", controllerType).Info("Starting controller")
-		go cs.controller.Run(cs.threadiness, cc.stop)
+		go cs.controller.Run(cs.workers, cc.stop)
 	}
 	select {}
 }
 
-// Object for keeping track of Controller information.
-type controllerState struct {
-	controller  controller.Controller
-	threadiness int
+// Track controller information for each controller type.
+type controllerInfo struct {
+	controller controller.Controller
+	workers    int
 }

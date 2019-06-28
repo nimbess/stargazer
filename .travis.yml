@@ -8,6 +8,7 @@ install:
   - go get -u golang.org/x/lint/golint
 
 before_script:
+  - set -e
   - go list ./... | grep -v /proto/ | xargs -n 1 golint
   - go tool vet  ./cmd/ ./pkg/
   - git ls-files | grep -v proto |grep ".go$" | xargs gofmt -l | wc -l

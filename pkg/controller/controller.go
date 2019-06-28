@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package controller is the interface for each controller type.
 package controller
 
+// Controller interface.
 type Controller interface {
 	Run(threadiness int, stopCh chan struct{})
 }

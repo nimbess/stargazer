@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// config file handling for Stargazer
+// Package config parses configuration files.
 package config
 
 import (
@@ -20,26 +20,33 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config stores the parsed configuration or defaults.
 type Config struct {
-	LogLevel string
-	NodeWorkers int
+	LogLevel    string
 	Controllers string
+	NodeWorkers int
+	UNPWorkers  int
 }
 
+// NewConfig is the constructor for Config.
 func NewConfig() *Config {
-	return &Config {
-		LogLevel: "info",
-		NodeWorkers: 1,
+	return &Config{
+		LogLevel:    "info",
 		Controllers: "node",
+		NodeWorkers: 1,
+		UNPWorkers:  1,
 	}
 }
 
+// Parse the configuration and store in Config.
+// Defaults are returned if parsing fails.
 func (c *Config) Parse(cfgPath string, cfgName string) error {
 	vpr := viper.New()
-	defaults := map[string]interface{} {
-		"LogLevel": c.LogLevel,
-		"NodeWorkers": c.NodeWorkers,
+	defaults := map[string]interface{}{
+		"LogLevel":    c.LogLevel,
 		"Controllers": c.Controllers,
+		"NodeWorkers": c.NodeWorkers,
+		"UNPWorkers":  c.UNPWorkers,
 	}
 	for k, v := range defaults {
 		vpr.SetDefault(k, v)

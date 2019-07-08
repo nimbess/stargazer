@@ -1,0 +1,5 @@
+---
+LogLevel: Debug
+Controllers: node
+NodeWorkers: invalid
+UNPWorkers: 1

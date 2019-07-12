@@ -31,10 +31,10 @@ coverage-html: bindir
 
 ## Build the application binary
 build: bindir
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 ${GO} build -v -o ${BINDIR}/${BINARY} -ldflags "-X main.VERSION=$(TAG)" ./cmd/${BINARY}/
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 ${GO} build -o ${BINDIR}/${BINARY} -ldflags "-X main.VERSION=$(TAG)" ./cmd/${BINARY}/
 
 ## Build a container image
-image: build
+image:
 	${DOCKER} build -t nimbess/${BINARY}:${TAG} .
 
 ## Clean the build dirs

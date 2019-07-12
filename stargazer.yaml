@@ -3,3 +3,5 @@ LogLevel: Debug
 Controllers: node,unp
 NodeWorkers: 1
 UNPWorkers: 1
+Kubeconfig: 
+ResyncPeriod: 0

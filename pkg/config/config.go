@@ -26,6 +26,8 @@ type Config struct {
 	Controllers string
 	NodeWorkers int
 	UNPWorkers  int
+	Kubeconfig  string
+	ResyncPeriod int64
 }
 
 // NewConfig is the constructor for Config.
@@ -35,6 +37,8 @@ func NewConfig() *Config {
 		Controllers: "node",
 		NodeWorkers: 1,
 		UNPWorkers:  1,
+		Kubeconfig:  "",
+		ResyncPeriod: 0,
 	}
 }
 
@@ -47,6 +51,8 @@ func (c *Config) Parse(cfgPath string, cfgName string) error {
 		"Controllers": c.Controllers,
 		"NodeWorkers": c.NodeWorkers,
 		"UNPWorkers":  c.UNPWorkers,
+		"Kubeconfig":  c.Kubeconfig,
+		"ResyncPeriod": c.ResyncPeriod,
 	}
 	for k, v := range defaults {
 		vpr.SetDefault(k, v)

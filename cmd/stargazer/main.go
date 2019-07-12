@@ -20,11 +20,16 @@ import (
 	"flag"
 	"fmt"
 	"github.com/nimbess/stargazer/pkg/config"
-	"github.com/nimbess/stargazer/pkg/controller"
+	"github.com/nimbess/stargazer/pkg/controllers/controller"
 	"github.com/nimbess/stargazer/pkg/controllers/node"
 	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"strings"
+	"time"
 )
 
 // VERSION is updated during the build process using git
@@ -49,7 +54,54 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Parse the user supplied config. If there are parsing errors then defaults will be used.
+	cfg := getConfig()
+
+	// Get the k8s client api and shared informer factory.
+	k8sClientset, err := getK8SClient(cfg.Kubeconfig)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to get k8s client api")
+	}
+	factory := getInformerFactory(k8sClientset, cfg)
+
+	// TODO: ensure connection to etcd is available
+
+	// setup the controller control structure
+	ctx := context.Background()
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+	controllerCtrl := &controllerControl{
+		ctx:            ctx,
+		config:         cfg,
+		stopCh:         stopCh,
+		controllerInfo: make(map[string]*controllerInfo),
+	}
+
+	// Create an instance of each requested controller.
+	// Store the instance along with it's number of workers into a manager list
+	for _, controllerType := range strings.Split(cfg.Controllers, ",") {
+		switch controllerType {
+		case "node":
+			nodeController := node.New(ctx, k8sClientset, cfg, factory)
+			if nodeController == nil {
+				log.WithField("controllerType", controllerType).Info("Failed to new controller")
+				continue
+			}
+			controllerCtrl.controllerInfo["Node"] = &controllerInfo{
+				controller: nodeController,
+				workers:    cfg.NodeWorkers,
+			}
+		default:
+			log.WithField("controllerType", controllerType).Info("Invalid controller")
+		}
+	}
+
+	factory.Start(stopCh)
+	controllerCtrl.RunControllers()
+}
+
+// getConfig gets the configuration
+func getConfig() *config.Config {
+	// Parse the user supplied config. If there are parsing errors then defaults will be returned.
 	cfg := config.NewConfig()
 	if err := cfg.Parse(cfgPath, cfgName); err != nil {
 		log.WithField("cfgName", cfgName).WithField("cfgPath", cfgPath).
@@ -63,50 +115,78 @@ func main() {
 		logLevel = log.InfoLevel
 	}
 	log.SetLevel(logLevel)
+	return cfg
+}
 
-	stop := make(chan struct{})
-	defer close(stop)
-	ctx := context.Background()
-	// TODO: ensure connection to etcd is available
-
-	controllerCtrl := &controllerControl{
-		ctx:            ctx,
-		controllerInfo: make(map[string]*controllerInfo),
-		config:         cfg,
-		stop:           stop,
+// getK8SClient builds and returns a Kubernetes client.
+func getK8SClient(kubeconfig string) (kubernetes.Interface, error) {
+	// Build the kubeconfig.
+	if kubeconfig == "" {
+		log.Info("Using inClusterConfig")
+	}
+	k8sConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build kubeconfig: %s", err)
 	}
 
-	// Create an instance of each requested controller.
-	// Store the instance along with it's number of workers into a manager list
-	for _, controllerType := range strings.Split(cfg.Controllers, ",") {
-		switch controllerType {
-		case "node":
-			nodeController := node.NewController(ctx, cfg)
-			controllerCtrl.controllerInfo["Node"] = &controllerInfo{
-				controller: nodeController,
-				workers:    cfg.NodeWorkers,
-			}
-		default:
-			log.WithField("controller", controllerType).Info("Invalid controller")
-		}
+	// Get Kubernetes clientset.
+	k8sClientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build kubernetes clientset: %s", err)
 	}
 
-	controllerCtrl.RunControllers()
+	return k8sClientset, nil
+}
+
+func debugClient(k8sClientset kubernetes.Interface) {
+	log.Infof("k8sClientset: %+v", k8sClientset)
+
+	pods, err := k8sClientset.CoreV1().Pods("").List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("failed to get pods: %s", err)
+	}
+	log.Infof("pods: %+v", pods)
+
+	pods, err = k8sClientset.CoreV1().Pods("stargazer").List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("failed to get default pods: %s", err)
+	}
+	log.Infof("pods: %+v", pods)
+
+	nodes, err := k8sClientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("failed to get nodes: %s", err)
+	}
+	log.Infof("nodes: %+v", nodes)
+
+	services, err := k8sClientset.CoreV1().Services("stargazer").List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("failed to get services: %s", err)
+	}
+	log.Infof("services: %+v", services)
+}
+
+// getInformerFactory returns a SharedInformerFactory to use with the controllers.
+func getInformerFactory(clientset kubernetes.Interface, cfg *config.Config) informers.SharedInformerFactory {
+	// TODO: Use the config resync period
+	return informers.NewSharedInformerFactory(clientset, time.Second*30)
 }
 
 // Object for keeping track of controller states and statuses.
 type controllerControl struct {
 	ctx            context.Context
-	controllerInfo map[string]*controllerInfo
 	config         *config.Config
-	stop           chan struct{}
+	stopCh         chan struct{}
+	controllerInfo map[string]*controllerInfo
 }
 
 // Runs all the controllers and blocks indefinitely.
 func (cc *controllerControl) RunControllers() {
 	for controllerType, cs := range cc.controllerInfo {
 		log.WithField("ControllerType", controllerType).Info("Starting controller")
-		go cs.controller.Run(cs.workers, cc.stop)
+		if err := cs.controller.Run(cs.workers, cc.stopCh); err != nil {
+			log.WithField("ControllerType", controllerType).Warn("Failed to start controller")
+		}
 	}
 	select {}
 }

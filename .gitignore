@@ -16,3 +16,6 @@ bin*
 
 # JetBrains IDE
 .idea*
+
+# Using modules so ignore vendor
+vendor/

@@ -25,8 +25,9 @@ import (
 )
 
 type testinput struct {
-	cfgPath string
-	cfgName string
+	testName string
+	cfgPath  string
+	cfgName  string
 }
 
 type testoutput struct {
@@ -40,19 +41,19 @@ type testio struct {
 }
 
 var defaultCfg = &config.Config{
-	LogLevel: "Debug", Controllers: "node", NodeWorkers: 1, UNPWorkers: 1}
+	LogLevel: "Debug", Controllers: "node", NodeWorkers: 1, UNPWorkers: 1, Kubeconfig: "/etc/kubernetes/admin.conf"}
 
 var tests = []testio{
 	// pass: successful read and parse of config
-	{testinput{"./testdata", "stargazer"}, testoutput{"success", *defaultCfg}},
+	{testinput{"parse 1", "./testdata", "stargazer"}, testoutput{"success", *defaultCfg}},
 	// pass: bad path, expected fail
-	{testinput{"./badpath", "stargazer"}, testoutput{"badpath", *defaultCfg}},
+	{testinput{"parse 2", "./badpath", "stargazer"}, testoutput{"badpath", *defaultCfg}},
 	// pass: bad name, expected fail
-	{testinput{"./testdata", "badname"}, testoutput{"badname", *defaultCfg}},
+	{testinput{"parse 3", "./testdata", "badname"}, testoutput{"badname", *defaultCfg}},
 	// pass: successful read and parse of config with extra params that are ignored
-	{testinput{"./testdata", "extra"}, testoutput{"success", *defaultCfg}},
+	{testinput{"parse 4", "./testdata", "extra"}, testoutput{"success", *defaultCfg}},
 	// pass: fail to read and parse of config with invalid params
-	{testinput{"./testdata", "invalid"}, testoutput{"invalid", *defaultCfg}},
+	{testinput{"parse 5", "./testdata", "invalid"}, testoutput{"invalid", *defaultCfg}},
 }
 
 func init() {
@@ -66,8 +67,10 @@ func init() {
 		}})
 }
 
-func fail(t *testing.T, in string, out string, got string) {
-	t.Error("For", in, "Expected", out, "Got", got)
+func fail(t *testing.T, testIo testio, in string, out string, got string) {
+	_, file, line, _ := runtime.Caller(1)
+	t.Errorf("%s\n%s:%d\nFor: %s\nExpected: %s\nGot: %s\n", testIo.in.testName, file, line, in, out, got)
+	//t.Error("Test", testIo.in.testName, "line",fmt.Sprintf("%s:%d", file, line), "For", in, "Expected", out, "Got", got)
 }
 
 func TestConfig_Parse(t *testing.T) {
@@ -77,20 +80,20 @@ func TestConfig_Parse(t *testing.T) {
 		if test.expected.error == "success" {
 			if err == nil { // Parse passed
 				if test.expected.cfg != *cfg { // fail if expected cfg not returned
-					fail(t, fmt.Sprintf("%+v", test.in),
+					fail(t, test, fmt.Sprintf("%+v", test.in),
 						fmt.Sprintf("%+v", test.expected.cfg),
 						fmt.Sprintf("%+v", *cfg))
 				}
 			} else { // fail: error is unexpected
-				fail(t, fmt.Sprintf("%+v", test.in),
+				fail(t, test, fmt.Sprintf("%+v", test.in),
 					test.expected.error,
 					fmt.Sprintf("%s", err))
 			}
 		} else {
 			if err == nil { // fail if no Parse error
-				fail(t, fmt.Sprintf("%+v", test.in),
+				fail(t, test, fmt.Sprintf("%+v", test.in),
 					test.expected.error,
-					fmt.Sprintf("%s", err))
+					"nil")
 			}
 		}
 	}

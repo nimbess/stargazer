@@ -17,5 +17,5 @@ package controller
 
 // Controller interface.
 type Controller interface {
-	Run(threadiness int, stopCh chan struct{})
+	Run(threadiness int, stopCh chan struct{}) error
 }

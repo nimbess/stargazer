@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: stargazer
-  namespace: stargazer
+  namespace: kube-system
 rules:
 - apiGroups: [""]
   resources: ["pods", "services"]
@@ -13,7 +13,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: stargazer
-  namespace: stargazer
+  namespace: kube-system
 roleRef:
   kind: Role
   name: stargazer
@@ -21,4 +21,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: stargazer
-  namespace: stargazer
+  namespace: kube-system

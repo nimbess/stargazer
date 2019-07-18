@@ -1,13 +1,31 @@
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nimbess-etcd-config
+  namespace: kube-system
+  labels:
+    app: nimbess-etcd
+data:
+  # Add comma-separated list of node host addresses where the nimbess-etcd pods are started
+  etcdctl_endpoints: "http://192.168.122.137:12379"
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: stargazer
-  namespace: stargazer
+  namespace: kube-system
 spec:
   containers:
   - name: stargazer
     image: nimbess/stargazer:1
     imagePullPolicy: Never
+    env:
+      - name: ETCDCTL_ENDPOINTS
+        valueFrom:
+          configMapKeyRef:
+            name: nimbess-etcd-config
+            key: etcdctl_endpoints
+  # Comment out the below to let k8s select any node
   nodeName: kube-nonetwork-node-1
   serviceAccountName: stargazer

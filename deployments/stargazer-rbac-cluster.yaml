@@ -19,4 +19,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: stargazer
-    namespace: stargazer
+    namespace: kube-system

@@ -18,27 +18,32 @@ package config
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"time"
 )
 
 // Config stores the parsed configuration or defaults.
 type Config struct {
-	LogLevel    string
-	Controllers string
-	NodeWorkers int
-	UNPWorkers  int
-	Kubeconfig  string
-	ResyncPeriod int64
+	LogLevel        string
+	Controllers     string
+	NodeWorkers     int
+	UNPWorkers      int
+	Kubeconfig      string
+	ResyncPeriod    int64
+	EtcdEndpoints   string
+	EtcdDialTimeout time.Duration
 }
 
 // NewConfig is the constructor for Config.
 func NewConfig() *Config {
 	return &Config{
-		LogLevel:    "info",
-		Controllers: "node",
-		NodeWorkers: 1,
-		UNPWorkers:  1,
-		Kubeconfig:  "",
-		ResyncPeriod: 0,
+		LogLevel:        "info",
+		Controllers:     "node",
+		NodeWorkers:     1,
+		UNPWorkers:      1,
+		Kubeconfig:      "",
+		ResyncPeriod:    0,
+		EtcdEndpoints:   "http://127.0.0.1:12379",
+		EtcdDialTimeout: 1 * time.Second,
 	}
 }
 
@@ -47,12 +52,14 @@ func NewConfig() *Config {
 func (c *Config) Parse(cfgPath string, cfgName string) error {
 	vpr := viper.New()
 	defaults := map[string]interface{}{
-		"LogLevel":    c.LogLevel,
-		"Controllers": c.Controllers,
-		"NodeWorkers": c.NodeWorkers,
-		"UNPWorkers":  c.UNPWorkers,
-		"Kubeconfig":  c.Kubeconfig,
-		"ResyncPeriod": c.ResyncPeriod,
+		"LogLevel":        c.LogLevel,
+		"Controllers":     c.Controllers,
+		"NodeWorkers":     c.NodeWorkers,
+		"UNPWorkers":      c.UNPWorkers,
+		"Kubeconfig":      c.Kubeconfig,
+		"ResyncPeriod":    c.ResyncPeriod,
+		"EtcdEndpoints":   c.EtcdEndpoints,
+		"EtcdDialTimeout": c.EtcdDialTimeout,
 	}
 	for k, v := range defaults {
 		vpr.SetDefault(k, v)
@@ -62,6 +69,7 @@ func (c *Config) Parse(cfgPath string, cfgName string) error {
 	vpr.AddConfigPath(cfgPath)
 	vpr.SetConfigName(cfgName)
 	vpr.AutomaticEnv()
+	_ = vpr.BindEnv("EtcdEndpoints", "ETCDCTL_ENDPOINTS")
 	err := vpr.ReadInConfig()
 	if err != nil {
 		log.WithError(err).Warn("Failed to read config")

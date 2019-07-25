@@ -37,6 +37,14 @@ build: bindir
 image:
 	${DOCKER} build -t nimbess/${BINARY}:${TAG} .
 
+## Get the protobuf generator plugin
+get-generators:
+	go get -u github.com/golang/protobuf/protoc-gen-go
+
+## Compile the protobuf files
+proto:
+	protoc --go_out=plugins=grpc:. ./pkg/model/node/*.proto
+
 ## Clean the build dirs
 clean:
 	go clean

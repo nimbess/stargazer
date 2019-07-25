@@ -22,6 +22,7 @@ import (
 	"github.com/nimbess/stargazer/pkg/config"
 	"github.com/nimbess/stargazer/pkg/controllers/controller"
 	"github.com/nimbess/stargazer/pkg/controllers/node"
+	"github.com/nimbess/stargazer/pkg/etcdv3"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -56,6 +57,9 @@ func main() {
 
 	cfg := getConfig()
 
+	// Get the context
+	ctx := context.Background()
+
 	// Get the k8s client api and shared informer factory.
 	k8sClientset, err := getK8SClient(cfg.Kubeconfig)
 	if err != nil {
@@ -63,10 +67,14 @@ func main() {
 	}
 	factory := getInformerFactory(k8sClientset, cfg)
 
-	// TODO: ensure connection to etcd is available
+	// Get the etcd client.
+	etcdClient, err := getEtcdClient(cfg)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to get etcd client")
+	}
+	//_ := putNimbessRoot(ctx, etcdClient)
 
 	// setup the controller control structure
-	ctx := context.Background()
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 	controllerCtrl := &controllerControl{
@@ -81,7 +89,7 @@ func main() {
 	for _, controllerType := range strings.Split(cfg.Controllers, ",") {
 		switch controllerType {
 		case "node":
-			nodeController := node.New(ctx, k8sClientset, cfg, factory)
+			nodeController := node.New(ctx, k8sClientset, cfg, etcdClient, factory)
 			if nodeController == nil {
 				log.WithField("controllerType", controllerType).Info("Failed to new controller")
 				continue
@@ -195,4 +203,12 @@ func (cc *controllerControl) RunControllers() {
 type controllerInfo struct {
 	controller controller.Controller
 	workers    int
+}
+
+func getEtcdClient(config *config.Config) (etcdv3.Client, error) {
+	c, err := etcdv3.New(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get etcd client: %s", err)
+	}
+	return c, nil
 }

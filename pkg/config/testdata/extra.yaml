@@ -3,4 +3,8 @@ LogLevel: Debug
 Controllers: node
 NodeWorkers: 1
 UNPWorkers: 1
+Kubeconfig: /etc/kubernetes/admin.conf
+EtcdDialTimeout: 1
+EtcdEndpoints: http://127.0.0.1:12379
+ResyncPeriod: 0
 Extra: extra

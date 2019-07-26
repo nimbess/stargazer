@@ -41,7 +41,9 @@ type testio struct {
 }
 
 var defaultCfg = &config.Config{
-	LogLevel: "Debug", Controllers: "node", NodeWorkers: 1, UNPWorkers: 1, Kubeconfig: "/etc/kubernetes/admin.conf"}
+	LogLevel: "Debug", Controllers: "node", NodeWorkers: 1, UNPWorkers: 1, Kubeconfig: "/etc/kubernetes/admin.conf",
+	EtcdEndpoints: "http://127.0.0.1:12379", EtcdDialTimeout: 1,
+}
 
 var tests = []testio{
 	// pass: successful read and parse of config

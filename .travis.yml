@@ -3,6 +3,9 @@ dist: trusty
 
 go:
   - 1.11.x
+env:
+  global:
+    secure: "ZfM7OozQDN1PQYz8m6d/70crPFTxHwvLKzAQdpoGI9rN8F1cLW+l1eNTgALrFxPbRxNY3gA4MnwBjxHMKR4xUaEAC2oF9Gg3qhqKE4SeXvrqImdwiZoClxA5jfMYDDVVC4w7jQBXcFY6GcHEQw6wukiAQOHBkKwYL40Hkt7/ia0TAIa9HEw79D9UU3/sV8pwvYJJQGvKL/UNtruzDRzv7dgEHDXJE63PlIdsj0tHjb5JtteRsuZisJVn0zRcQzH6OsfglOpaVRqD5kuM3fJOHvK9lcfov/U5kboOZbhGuhrbArm0d/RDPoG3p/x0lIYVcJwML+3NK6cIEIGBJJM9q95QR9ZNvFSJyjzQYpQ0PXVgFLaSTa7w97RUCwNTXgyz7KZACzsviH5m6PhFOnIqf39UAolemHhb3G4lpZXCGgIPi0OnpJ+8KK+VjFxFhGXcA98pfX15NmFkOW0R36pStBaQW82FexHMhHT1XYNfVJ5Bbj7o6z07Bm4kkk8IRTf9XgMY513QtTDKzN8LrlaqgIT2jh/+W/PLRkGqW4W0SwE3M/dzPBY7kUm9qbnczVYdLXRdK4EBBiQehrExJPTmqIwNgFTJLSZlN+k0d77U/I89bbiYXRx0dq9fZUyzrbuQuVZiRQ5sGfHfFvlvaE1Sqlbrc5rx5P3zqkdUnL4reZo="
 
 install:
   - go get -u golang.org/x/lint/golint
@@ -14,4 +17,16 @@ before_script:
   - git ls-files | grep -v proto |grep ".go$" | xargs gofmt -l | wc -l
 
 script:
-  - echo 0
+  - docker build -t nimbess/stargazer .
+
+deploy:
+  # Push images to Dockerhub on merge to master
+  - provider: script
+    on:
+      branch: master
+    script: >
+      bash -c '
+      docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS";
+      docker push nimbess/stargazer:latest;
+      echo done'
+

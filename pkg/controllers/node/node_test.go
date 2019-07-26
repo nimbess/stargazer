@@ -57,6 +57,7 @@ func TestNewController(t *testing.T) {
 		})
 	}
 }
+
 // TODO: fix the informer unit tests
 /*
 type fixture struct {

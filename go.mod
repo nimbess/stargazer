@@ -1,7 +1,9 @@
 module github.com/nimbess/stargazer
 
 require (
+	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/googleapis/gnostic v0.3.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
@@ -14,7 +16,7 @@ require (
 	k8s.io/api v0.0.0-20190703205437-39734b2a72fe
 	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/klog v0.3.1
+	k8s.io/klog v0.3.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20190603182131-db7b694dc208 // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect

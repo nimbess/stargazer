@@ -1,0 +1,9 @@
+---
+apiVersion: nimbess.com/v1
+kind: UnpConfig
+metadata:
+  name: testpolicy
+  namespace: kube-system
+spec:
+  type: urlfilter
+  podlabel: blah

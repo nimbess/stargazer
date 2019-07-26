@@ -21,12 +21,15 @@ import (
 	"time"
 )
 
+// Controllers holds the enabled/disabled controller types
+type Controllers struct {
+	UNP bool
+}
+
 // Config stores the parsed configuration or defaults.
 type Config struct {
 	LogLevel        string
-	Controllers     string
-	NodeWorkers     int
-	UNPWorkers      int
+	Controllers     Controllers
 	Kubeconfig      string
 	ResyncPeriod    int64
 	EtcdEndpoints   string
@@ -35,14 +38,13 @@ type Config struct {
 
 // NewConfig is the constructor for Config.
 func NewConfig() *Config {
+	ctrl := Controllers{UNP: true}
 	return &Config{
 		LogLevel:        "info",
-		Controllers:     "node",
-		NodeWorkers:     1,
-		UNPWorkers:      1,
+		Controllers:     ctrl,
 		Kubeconfig:      "",
 		ResyncPeriod:    0,
-		EtcdEndpoints:   "http://127.0.0.1:12379",
+		EtcdEndpoints:   "http://127.0.0.1:52379",
 		EtcdDialTimeout: 1 * time.Second,
 	}
 }
@@ -54,8 +56,6 @@ func (c *Config) Parse(cfgPath string, cfgName string) error {
 	defaults := map[string]interface{}{
 		"LogLevel":        c.LogLevel,
 		"Controllers":     c.Controllers,
-		"NodeWorkers":     c.NodeWorkers,
-		"UNPWorkers":      c.UNPWorkers,
 		"Kubeconfig":      c.Kubeconfig,
 		"ResyncPeriod":    c.ResyncPeriod,
 		"EtcdEndpoints":   c.EtcdEndpoints,

@@ -20,5 +20,5 @@ spec:
           configMapKeyRef:
             name: nimbess-etcd-config
             key: etcdctl_endpoints
-  serviceAccountName: stargazer
+  serviceAccountName: nimbess
   hostNetwork: true

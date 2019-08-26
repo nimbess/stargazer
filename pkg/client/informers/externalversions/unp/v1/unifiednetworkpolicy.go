@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// UnpConfigInformer provides access to a shared informer and lister for
-// UnpConfigs.
-type UnpConfigInformer interface {
+// UnifiedNetworkPolicyInformer provides access to a shared informer and lister for
+// UnifiedNetworkPolicies.
+type UnifiedNetworkPolicyInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.UnpConfigLister
+	Lister() v1.UnifiedNetworkPolicyLister
 }
 
-type unpConfigInformer struct {
+type unifiedNetworkPolicyInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewUnpConfigInformer constructs a new informer for UnpConfig type.
+// NewUnifiedNetworkPolicyInformer constructs a new informer for UnifiedNetworkPolicy type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewUnpConfigInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredUnpConfigInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewUnifiedNetworkPolicyInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredUnifiedNetworkPolicyInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredUnpConfigInformer constructs a new informer for UnpConfig type.
+// NewFilteredUnifiedNetworkPolicyInformer constructs a new informer for UnifiedNetworkPolicy type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredUnpConfigInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredUnifiedNetworkPolicyInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NimbessV1().UnpConfigs(namespace).List(options)
+				return client.NimbessV1().UnifiedNetworkPolicies(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NimbessV1().UnpConfigs(namespace).Watch(options)
+				return client.NimbessV1().UnifiedNetworkPolicies(namespace).Watch(options)
 			},
 		},
-		&unpv1.UnpConfig{},
+		&unpv1.UnifiedNetworkPolicy{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *unpConfigInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredUnpConfigInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *unifiedNetworkPolicyInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredUnifiedNetworkPolicyInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *unpConfigInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&unpv1.UnpConfig{}, f.defaultInformer)
+func (f *unifiedNetworkPolicyInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&unpv1.UnifiedNetworkPolicy{}, f.defaultInformer)
 }
 
-func (f *unpConfigInformer) Lister() v1.UnpConfigLister {
-	return v1.NewUnpConfigLister(f.Informer().GetIndexer())
+func (f *unifiedNetworkPolicyInformer) Lister() v1.UnifiedNetworkPolicyLister {
+	return v1.NewUnifiedNetworkPolicyLister(f.Informer().GetIndexer())
 }

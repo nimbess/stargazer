@@ -28,8 +28,8 @@ type FakeNimbessV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeNimbessV1) UnpConfigs(namespace string) v1.UnpConfigInterface {
-	return &FakeUnpConfigs{c, namespace}
+func (c *FakeNimbessV1) UnifiedNetworkPolicies(namespace string) v1.UnifiedNetworkPolicyInterface {
+	return &FakeUnifiedNetworkPolicies{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

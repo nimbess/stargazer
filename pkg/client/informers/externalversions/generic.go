@@ -53,8 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=nimbess, Version=v1
-	case v1.SchemeGroupVersion.WithResource("unpconfigs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Nimbess().V1().UnpConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("unifiednetworkpolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Nimbess().V1().UnifiedNetworkPolicies().Informer()}, nil
 
 	}
 

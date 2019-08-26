@@ -1,18 +1,16 @@
-/*
-Copyright 2016 Skippbox, Ltd.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright (c) 2019 Red Hat and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package unp
 
@@ -23,6 +21,7 @@ import (
 	"github.com/nimbess/stargazer/pkg/etcdv3"
 	"github.com/nimbess/stargazer/pkg/model"
 	log "github.com/sirupsen/logrus"
+	"path"
 )
 
 // Handler is implemented by any handler.
@@ -42,7 +41,7 @@ func (u *UNP) Init(c *config.Config, etcdClient etcdv3.Client, ctx context.Conte
 // ObjectCreated creates entry in Nimbess DB with translated object
 func (u *UNP) ObjectCreated(obj interface{}) {
 	log.Infof("Created object found by controller: %v", obj)
-	unpConf := obj.(*unpv1.UnpConfig)
+	unpConf := obj.(*unpv1.UnifiedNetworkPolicy)
 	kv, err := u.K8sToNimbess(unpConf)
 	if err != nil {
 		log.Errorf("Failed to convert K8S to Nimbess: %v", unpConf)
@@ -55,23 +54,21 @@ func (u *UNP) ObjectCreated(obj interface{}) {
 }
 
 // ObjectDeleted deletes entry in Nimbess DB with translated object
-func (u *UNP) ObjectDeleted(obj interface{}) {
-	log.Infof("Deleted object found by controller: %v", obj)
-	unpConf := obj.(*unpv1.UnpConfig)
-	kv, err := u.K8sToNimbess(unpConf)
-	if err != nil {
-		log.Errorf("Failed to convert K8S to Nimbess: %v", unpConf)
-		return
+func (u *UNP) ObjectDeleted(name string) {
+	log.Infof("Deleted object found by controller: %v", name)
+	k := model.UNPKey{
+		Name: name,
 	}
-	err = u.etcdClient.Delete(u.ctx, kv.Key)
+
+	err := u.etcdClient.Delete(u.ctx, k)
 	if err != nil {
-		log.Errorf("Failed to delete key from Nimbess etcd: %v", kv.Key)
+		log.Errorf("Failed to delete key from Nimbess etcd: %v", k)
 	}
 }
 
 // ObjectUpdated updates entry in Nimbess DB with translated object
 func (u *UNP) ObjectUpdated(oldObj, newObj interface{}) {
-
+	// TODO(trozet): implement
 }
 
 // TestHandler tests the handler configuration writing tests objects into DB
@@ -79,10 +76,10 @@ func (u *UNP) TestHandler() {
 
 }
 
-// toNimbess translates a K8S UNP Config into a Nimbess Key/Value Pair to be written into ETCD
-func (u *UNP) K8sToNimbess(unpConfig *unpv1.UnpConfig) (*model.KVPair, error) {
+// K8stoNimbess translates a K8S UNP Config into a Nimbess Key/Value Pair to be written into ETCD
+func (u *UNP) K8sToNimbess(unpConfig *unpv1.UnifiedNetworkPolicy) (*model.KVPair, error) {
 	k := model.UNPKey{
-		Name: unpConfig.Name,
+		Name: path.Join(unpConfig.Namespace, unpConfig.Name),
 	}
 
 	kv := model.KVPair{Key: k, Value: unpConfig}

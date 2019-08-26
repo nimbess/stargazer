@@ -20,8 +20,8 @@ import (
 	nimbessclientset "github.com/nimbess/stargazer/pkg/client/clientset/versioned"
 	unpinformer "github.com/nimbess/stargazer/pkg/client/informers/externalversions"
 	"github.com/nimbess/stargazer/pkg/config"
+	"github.com/nimbess/stargazer/pkg/controller/handlers"
 	"github.com/nimbess/stargazer/pkg/etcdv3"
-	"github.com/nimbess/stargazer/pkg/handlers"
 	"github.com/nimbess/stargazer/pkg/signals"
 	"github.com/nimbess/stargazer/pkg/utils"
 	"reflect"
@@ -92,7 +92,7 @@ func Start(conf *config.Config, kubeClient *nimbessclientset.Clientset, eventHan
 	nimbessInformerFactory := unpinformer.NewSharedInformerFactory(kubeClient, time.Second*30)
 
 	if conf.Controllers.UNP {
-		informer = nimbessInformerFactory.Nimbess().V1().UnpConfigs().Informer()
+		informer = nimbessInformerFactory.Nimbess().V1().UnifiedNetworkPolicies().Informer()
 		resType = "unp"
 	}
 	c := newResourceController(kubeClient, eventHandler, informer, resType)
@@ -240,7 +240,7 @@ func (c *Controller) processItem(newEvent Event) error {
 		return nil
 	case "delete":
 		c.logger.Debug("Inside delete handler")
-		c.eventHandler.ObjectDeleted(obj)
+		c.eventHandler.ObjectDeleted(newEvent.key)
 		return nil
 	}
 	return nil

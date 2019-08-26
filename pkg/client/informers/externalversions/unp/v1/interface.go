@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// UnpConfigs returns a UnpConfigInformer.
-	UnpConfigs() UnpConfigInformer
+	// UnifiedNetworkPolicies returns a UnifiedNetworkPolicyInformer.
+	UnifiedNetworkPolicies() UnifiedNetworkPolicyInformer
 }
 
 type version struct {
@@ -39,7 +39,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// UnpConfigs returns a UnpConfigInformer.
-func (v *version) UnpConfigs() UnpConfigInformer {
-	return &unpConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// UnifiedNetworkPolicies returns a UnifiedNetworkPolicyInformer.
+func (v *version) UnifiedNetworkPolicies() UnifiedNetworkPolicyInformer {
+	return &unifiedNetworkPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

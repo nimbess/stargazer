@@ -17,8 +17,8 @@ package handlers
 import (
 	"context"
 	"github.com/nimbess/stargazer/pkg/config"
+	"github.com/nimbess/stargazer/pkg/controller/handlers/unp"
 	"github.com/nimbess/stargazer/pkg/etcdv3"
-	"github.com/nimbess/stargazer/pkg/handlers/unp"
 )
 
 // Handler is implemented by any handler.
@@ -26,7 +26,7 @@ import (
 type Handler interface {
 	Init(c *config.Config, etcdClient etcdv3.Client, ctx context.Context) error
 	ObjectCreated(obj interface{})
-	ObjectDeleted(obj interface{})
+	ObjectDeleted(name string)
 	ObjectUpdated(oldObj, newObj interface{})
 	TestHandler()
 }
@@ -54,7 +54,7 @@ func (d *Default) ObjectCreated(obj interface{}) {
 }
 
 // ObjectDeleted sends events on object deletion
-func (d *Default) ObjectDeleted(obj interface{}) {
+func (d *Default) ObjectDeleted(name string) {
 
 }
 

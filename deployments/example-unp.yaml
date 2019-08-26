@@ -1,9 +1,24 @@
 ---
 apiVersion: nimbess.com/v1
-kind: UnpConfig
+kind: UnifiedNetworkPolicy
 metadata:
   name: testpolicy
   namespace: kube-system
 spec:
-  type: urlfilter
-  podlabel: blah
+  l7Policies:
+    - default:
+        action: allow
+    - urlFilter:
+        action: deny
+        urls:
+          - www.google.com/blah/*
+          - www.yahoo.com/*
+          - msn.com
+        podSelector:
+          matchLabels:
+            environment: production
+        network: regionA
+  podSelector:
+    matchLabels:
+      environment: dev
+  network: devNetwork

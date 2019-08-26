@@ -18,10 +18,10 @@ limitations under the License.
 
 package v1
 
-// UnpConfigListerExpansion allows custom methods to be added to
-// UnpConfigLister.
-type UnpConfigListerExpansion interface{}
+// UnifiedNetworkPolicyListerExpansion allows custom methods to be added to
+// UnifiedNetworkPolicyLister.
+type UnifiedNetworkPolicyListerExpansion interface{}
 
-// UnpConfigNamespaceListerExpansion allows custom methods to be added to
-// UnpConfigNamespaceLister.
-type UnpConfigNamespaceListerExpansion interface{}
+// UnifiedNetworkPolicyNamespaceListerExpansion allows custom methods to be added to
+// UnifiedNetworkPolicyNamespaceLister.
+type UnifiedNetworkPolicyNamespaceListerExpansion interface{}

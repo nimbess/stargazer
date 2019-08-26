@@ -26,7 +26,7 @@ import (
 
 type NimbessV1Interface interface {
 	RESTClient() rest.Interface
-	UnpConfigsGetter
+	UnifiedNetworkPoliciesGetter
 }
 
 // NimbessV1Client is used to interact with features provided by the nimbess group.
@@ -34,8 +34,8 @@ type NimbessV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *NimbessV1Client) UnpConfigs(namespace string) UnpConfigInterface {
-	return newUnpConfigs(c, namespace)
+func (c *NimbessV1Client) UnifiedNetworkPolicies(namespace string) UnifiedNetworkPolicyInterface {
+	return newUnifiedNetworkPolicies(c, namespace)
 }
 
 // NewForConfig creates a new NimbessV1Client for the given config.

@@ -2,44 +2,43 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: stargazer
+  name: nimbess
   namespace: kube-system
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stargazer
+  name: nimbess
 rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["pods", "services"]
-    verbs: ["get", "list", "watch"]
+    resources: ["pods", "pods/status", "services"]
+    verbs: ["get", "list", "watch", "update", "create"]
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
-    verbs: ["create", "get", "list", "watch", "patch"]
+    verbs: ["create", "get", "list", "watch", "patch", "update", "delete"]
   - apiGroups: ["*"]
-    resources: ["unpconfigs"]
+    resources: ["unifiednetworkpolicies"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stargazer
+  name: nimbess
 roleRef:
   kind: ClusterRole
-  name: stargazer
+  name: nimbess
   apiGroup: rbac.authorization.k8s.io
 subjects:
   - kind: ServiceAccount
-    name: stargazer
+    name: nimbess
     namespace: kube-system
 
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: stargazer
-
+  name: nimbess

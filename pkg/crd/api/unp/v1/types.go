@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	CRDPlural   string = "unpconfigs"
+	CRDPlural   string = "unifiednetworkpolicies"
 	CRDGroup    string = "nimbess.com"
 	CRDVersion  string = "v1"
 	FullCRDName string = CRDPlural + "." + CRDGroup
@@ -20,30 +20,47 @@ const (
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type UnpConfig struct {
+type UnifiedNetworkPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
-	Spec              UnpConfigSpec   `json:"spec"`
-	Status            UnpConfigStatus `json:"status,omitempty"`
+	Spec              UnifiedNetworkPolicySpec   `json:"spec"`
+	Status            UnifiedNetworkPolicyStatus `json:"status,omitempty"`
 }
 
-type UnpConfigSpec struct {
-	Type       string `json:"type"`
-	PodLabel   string `json:"podLabel"`
+type DefaultPolicy struct {
+	Action string `json:"action,omitempty"`
+}
+
+type URLFilter struct {
+	Urls []string `json:"urls,omitempty"`
+	Action string `json:"action,omitempty"`
+	PodSelector   metav1.LabelSelector `json:"podSelector,omitempty"`
+	Network	   string `json:"network,omitempty"`
+}
+
+type L7Policy struct {
+	Default DefaultPolicy `json:"default,omitempty"`
+	UrlFilter URLFilter `json:"urlFilter,omitempty"`
+}
+
+type UnifiedNetworkPolicySpec struct {
+	L7Policies []L7Policy `json:"l7Policies"`
+	PodSelector   metav1.LabelSelector `json:"podSelector"`
+	Network	   string `json:"network"`
 	Attributes string `json:"attributes"`
 }
 
-type UnpConfigStatus struct {
+type UnifiedNetworkPolicyStatus struct {
 	State   string `json:"state,omitempty"`
 	Message string `json:"message,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type UnpConfigList struct {
+type UnifiedNetworkPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
-	Items           []UnpConfig `json:"items"`
+	Items           []UnifiedNetworkPolicy `json:"items"`
 }
 
 func CreateCRD(clientset *clientset.Clientset) error {
@@ -56,15 +73,21 @@ func CreateCRD(clientset *clientset.Clientset) error {
 			Scope:    apiextensionv1beta1.NamespaceScoped,
 			Names: apiextensionv1beta1.CustomResourceDefinitionNames{
 				Plural: CRDPlural,
-				Kind:   reflect.TypeOf(UnpConfig{}).Name(),
+				Kind:   reflect.TypeOf(UnifiedNetworkPolicy{}).Name(),
 			},
 		},
 	}
-
 	_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
 	if err != nil && apierrors.IsAlreadyExists(err) {
-		log.Info("UNP CRD successfully registered")
-		return nil
+		log.Info("UNP CRD already registered")
+		err = clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(FullCRDName, &metav1.DeleteOptions{})
+		if err != nil {
+			log.Fatalf("Error deleting existing CRD: %v", err)
+		}
+		_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+		if err !=nil {
+			log.Fatalf("Failed to create UNP CRD: %v", err)
+		}
 	}
 	if err == nil {
 		log.Info("UNP CRD successfully registered")

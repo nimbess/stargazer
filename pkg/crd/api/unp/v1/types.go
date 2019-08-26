@@ -32,22 +32,22 @@ type DefaultPolicy struct {
 }
 
 type URLFilter struct {
-	Urls []string `json:"urls,omitempty"`
-	Action string `json:"action,omitempty"`
-	PodSelector   metav1.LabelSelector `json:"podSelector,omitempty"`
-	Network	   string `json:"network,omitempty"`
+	Urls        []string             `json:"urls,omitempty"`
+	Action      string               `json:"action,omitempty"`
+	PodSelector metav1.LabelSelector `json:"podSelector,omitempty"`
+	Network     string               `json:"network,omitempty"`
 }
 
 type L7Policy struct {
-	Default DefaultPolicy `json:"default,omitempty"`
-	UrlFilter URLFilter `json:"urlFilter,omitempty"`
+	Default   DefaultPolicy `json:"default,omitempty"`
+	UrlFilter URLFilter     `json:"urlFilter,omitempty"`
 }
 
 type UnifiedNetworkPolicySpec struct {
-	L7Policies []L7Policy `json:"l7Policies"`
-	PodSelector   metav1.LabelSelector `json:"podSelector"`
-	Network	   string `json:"network"`
-	Attributes string `json:"attributes"`
+	L7Policies  []L7Policy           `json:"l7Policies"`
+	PodSelector metav1.LabelSelector `json:"podSelector"`
+	Network     string               `json:"network"`
+	Attributes  string               `json:"attributes"`
 }
 
 type UnifiedNetworkPolicyStatus struct {
@@ -85,7 +85,7 @@ func CreateCRD(clientset *clientset.Clientset) error {
 			log.Fatalf("Error deleting existing CRD: %v", err)
 		}
 		_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
-		if err !=nil {
+		if err != nil {
 			log.Fatalf("Failed to create UNP CRD: %v", err)
 		}
 	}

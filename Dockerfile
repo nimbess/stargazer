@@ -5,7 +5,6 @@ WORKDIR /go/src/github.com/nimbess/stargazer
 ENV GO111MODULE=on
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
 # RUN go mod verify
 
 # Build the binary

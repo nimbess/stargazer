@@ -5,16 +5,20 @@ metadata:
   name: stargazer
   namespace: kube-system
 spec:
+  nodeSelector:
+    node-role.kubernetes.io/master: ""
+  priorityClassName: system-node-critical
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
   containers:
   - name: stargazer
-    image: nimbess/stargazer:1
-    imagePullPolicy: Never
+    image: nimbess/stargazer:dev
     env:
       - name: ETCDCTL_ENDPOINTS
         valueFrom:
           configMapKeyRef:
             name: nimbess-etcd-config
             key: etcdctl_endpoints
-  # Comment out the below to let k8s select any node
-  nodeName: kube-nonetwork-node-1
-  serviceAccountName: stargazer
+  serviceAccountName: nimbess
+  hostNetwork: true

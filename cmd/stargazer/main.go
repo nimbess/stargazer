@@ -19,18 +19,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	nimbessclientset "github.com/nimbess/stargazer/pkg/client/clientset/versioned"
 	"github.com/nimbess/stargazer/pkg/config"
-	"github.com/nimbess/stargazer/pkg/controllers/controller"
-	"github.com/nimbess/stargazer/pkg/controllers/node"
+	"github.com/nimbess/stargazer/pkg/controller"
+	unpv1 "github.com/nimbess/stargazer/pkg/crd/api/unp/v1"
 	"github.com/nimbess/stargazer/pkg/etcdv3"
 	log "github.com/sirupsen/logrus"
+	extclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"strings"
-	"time"
 )
 
 // VERSION is updated during the build process using git
@@ -60,51 +59,33 @@ func main() {
 	// Get the context
 	ctx := context.Background()
 
-	// Get the k8s client api and shared informer factory.
-	k8sClientset, err := getK8SClient(cfg.Kubeconfig)
+	// Get the k8s client
+	k8sClient, err := getK8SClient(cfg.Kubeconfig)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to get k8s client api")
 	}
-	factory := getInformerFactory(k8sClientset, cfg)
 
 	// Get the etcd client.
 	etcdClient, err := getEtcdClient(cfg)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to get etcd client")
 	}
-	//_ := putNimbessRoot(ctx, etcdClient)
+
+	// Register CRDs
+	extClient, err := getK8sExtClient(cfg.Kubeconfig)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to get k8s extension client api")
+	}
+	if err := unpv1.CreateCRD(extClient); err != nil {
+		log.WithError(err).Fatal("failed to create UNP CRD")
+	}
 
 	// setup the controller control structure
 	stopCh := make(chan struct{})
 	defer close(stopCh)
-	controllerCtrl := &controllerControl{
-		ctx:            ctx,
-		config:         cfg,
-		stopCh:         stopCh,
-		controllerInfo: make(map[string]*controllerInfo),
-	}
 
-	// Create an instance of each requested controller.
-	// Store the instance along with it's number of workers into a manager list
-	for _, controllerType := range strings.Split(cfg.Controllers, ",") {
-		switch controllerType {
-		case "node":
-			nodeController := node.New(ctx, k8sClientset, cfg, etcdClient, factory)
-			if nodeController == nil {
-				log.WithField("controllerType", controllerType).Info("Failed to new controller")
-				continue
-			}
-			controllerCtrl.controllerInfo["Node"] = &controllerInfo{
-				controller: nodeController,
-				workers:    cfg.NodeWorkers,
-			}
-		default:
-			log.WithField("controllerType", controllerType).Info("Invalid controller")
-		}
-	}
+	controller.Run(cfg, k8sClient, etcdClient, ctx)
 
-	factory.Start(stopCh)
-	controllerCtrl.RunControllers()
 }
 
 // getConfig gets the configuration
@@ -127,7 +108,7 @@ func getConfig() *config.Config {
 }
 
 // getK8SClient builds and returns a Kubernetes client.
-func getK8SClient(kubeconfig string) (kubernetes.Interface, error) {
+func getK8SClient(kubeconfig string) (*nimbessclientset.Clientset, error) {
 	// Build the kubeconfig.
 	if kubeconfig == "" {
 		log.Info("Using inClusterConfig")
@@ -137,72 +118,61 @@ func getK8SClient(kubeconfig string) (kubernetes.Interface, error) {
 		return nil, fmt.Errorf("failed to build kubeconfig: %s", err)
 	}
 
-	// Get Kubernetes clientset.
-	k8sClientset, err := kubernetes.NewForConfig(k8sConfig)
+	// Get Kubernetes client.
+	k8sClient, err := nimbessclientset.NewForConfig(k8sConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build kubernetes clientset: %s", err)
+		return nil, fmt.Errorf("failed to build kubernetes client: %s", err)
 	}
 
-	return k8sClientset, nil
+	return k8sClient, nil
 }
 
-func debugClient(k8sClientset kubernetes.Interface) {
-	log.Infof("k8sClientset: %+v", k8sClientset)
+// getK8sExtClient builds and returns a Kubernetes client.
+func getK8sExtClient(kubeconfig string) (*extclientset.Clientset, error) {
+	// Build the kubeconfig.
+	if kubeconfig == "" {
+		log.Info("Using inClusterConfig")
+	}
+	k8sConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build kubeconfig: %s", err)
+	}
 
-	pods, err := k8sClientset.CoreV1().Pods("").List(metav1.ListOptions{})
+	// Get Kubernetes client.
+	k8sClient, err := extclientset.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build kubernetes client: %s", err)
+	}
+
+	return k8sClient, nil
+}
+
+func debugClient(k8sClient kubernetes.Interface) {
+	log.Infof("k8sClient: %+v", k8sClient)
+
+	pods, err := k8sClient.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
 		log.Warnf("failed to get pods: %s", err)
 	}
 	log.Infof("pods: %+v", pods)
 
-	pods, err = k8sClientset.CoreV1().Pods("stargazer").List(metav1.ListOptions{})
+	pods, err = k8sClient.CoreV1().Pods("stargazer").List(metav1.ListOptions{})
 	if err != nil {
 		log.Warnf("failed to get default pods: %s", err)
 	}
 	log.Infof("pods: %+v", pods)
 
-	nodes, err := k8sClientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := k8sClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		log.Warnf("failed to get nodes: %s", err)
 	}
 	log.Infof("nodes: %+v", nodes)
 
-	services, err := k8sClientset.CoreV1().Services("stargazer").List(metav1.ListOptions{})
+	services, err := k8sClient.CoreV1().Services("stargazer").List(metav1.ListOptions{})
 	if err != nil {
 		log.Warnf("failed to get services: %s", err)
 	}
 	log.Infof("services: %+v", services)
-}
-
-// getInformerFactory returns a SharedInformerFactory to use with the controllers.
-func getInformerFactory(clientset kubernetes.Interface, cfg *config.Config) informers.SharedInformerFactory {
-	// TODO: Use the config resync period
-	return informers.NewSharedInformerFactory(clientset, time.Second*30)
-}
-
-// Object for keeping track of controller states and statuses.
-type controllerControl struct {
-	ctx            context.Context
-	config         *config.Config
-	stopCh         chan struct{}
-	controllerInfo map[string]*controllerInfo
-}
-
-// Runs all the controllers and blocks indefinitely.
-func (cc *controllerControl) RunControllers() {
-	for controllerType, cs := range cc.controllerInfo {
-		log.WithField("ControllerType", controllerType).Info("Starting controller")
-		if err := cs.controller.Run(cs.workers, cc.stopCh); err != nil {
-			log.WithField("ControllerType", controllerType).Warn("Failed to start controller")
-		}
-	}
-	select {}
-}
-
-// Track controller information for each controller type.
-type controllerInfo struct {
-	controller controller.Controller
-	workers    int
 }
 
 func getEtcdClient(config *config.Config) (etcdv3.Client, error) {

@@ -17,23 +17,13 @@ package model
 import (
 	"fmt"
 	"github.com/nimbess/stargazer/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/nimbess/stargazer/pkg/crd/api/unp/v1"
 	"reflect"
 )
 
 var (
-	typeUNP = reflect.TypeOf(UNP{})
+	typeUNP = reflect.TypeOf(v1.UnifiedNetworkPolicy{})
 )
-
-type UNP struct {
-	Namespace  string            `json:"namespace,omitempty"`
-	Name       string            `json:"name,omitempty"`
-	InternalIP string            `json:"internalip,omitempty"`
-	Hostname   string            `json:"hostname,omitempty"`
-	PodCIDR    string            `json:"podCIDR,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	UID        types.UID         `json:"uid,omitempty"`
-}
 
 type UNPKey struct {
 	Name string
@@ -51,7 +41,7 @@ func (key UNPKey) defaultPath() (string, error) {
 }
 
 func (key UNPKey) valueType() (reflect.Type, error) {
-	return typeNode, nil
+	return typeUNP, nil
 }
 
 func (key UNPKey) String() string {

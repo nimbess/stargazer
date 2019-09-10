@@ -13,7 +13,7 @@ spec:
       effect: NoSchedule
   containers:
   - name: stargazer
-    image: nimbess/stargazer:dev
+    image: nimbess/stargazer
     env:
       - name: ETCDCTL_ENDPOINTS
         valueFrom:

@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -o /go/bin/stargazer -ldflags "-X main.VERSION=0.0.1" ./cmd/stargazer/
 
 # Copy the binary
-FROM alpine
+FROM centos:latest
 COPY --from=builder /go/bin/stargazer /go/bin/stargazer
 COPY stargazer.yaml /etc/stargazer.yaml
 

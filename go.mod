@@ -1,12 +1,20 @@
 module github.com/nimbess/stargazer
 
 require (
-	github.com/coreos/etcd v3.3.13+incompatible
-	github.com/kisielk/errcheck v1.2.0 // indirect
+	github.com/coreos/etcd v3.3.15+incompatible
+	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0
-	k8s.io/api v0.0.0-20190726022912-69e1bce1dad5
-	k8s.io/apiextensions-apiserver v0.0.0-20190726024412-102230e288fd
-	k8s.io/apimachinery v0.0.0-20190726022757-641a75999153
-	k8s.io/client-go v0.0.0-20190726023111-a9c895e7f2ac
+	k8s.io/api v0.0.0
+	k8s.io/apiextensions-apiserver v0.0.0
+	k8s.io/apimachinery v0.0.0
+	k8s.io/client-go v0.0.0
+)
+
+replace (
+	k8s.io/api => k8s.io/api v0.0.0-20191016110408-35e52d86657a
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
+	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
+	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 )
